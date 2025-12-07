@@ -1,0 +1,9 @@
+
+05. PROJEKT – Dokumentáció generálása
+-------------------------------------
+A kódból készült dokumentáció (Javadoc) bemutatása.
+
+A projekt tartalmaz:
+- Javadoc kommenteket
+- Fejlesztői dokumentációt
+- Funkcionális & nem funkcionális követelményeket

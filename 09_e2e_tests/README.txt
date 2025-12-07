@@ -1,0 +1,1 @@
+E2E tesztek Playwright használatával.
