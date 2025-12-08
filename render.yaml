@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: Talkative
+    env: node
+    region: frankfurt
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    plan: free
+    autoDeploy: true
+    envVars:
+      NODE_VERSION: "18"
