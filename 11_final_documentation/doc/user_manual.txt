@@ -1,0 +1,7 @@
+
+FELHASZNÁLÓI DOKUMENTÁCIÓ
+-------------------------
+1. Telepítés
+2. Funkciók
+3. Beállítások
+4. Hibaelhárítás

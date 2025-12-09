@@ -1,0 +1,1 @@
+Végső dokumentáció – felhasználói kézikönyv.

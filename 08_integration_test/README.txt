@@ -1,0 +1,1 @@
+Integrációs teszt: regisztrációs folyamat modul együttműködése.
