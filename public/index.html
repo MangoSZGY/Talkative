@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talkative Ultimate</title>
+  
+  <style>
+    /* STÍLUSOK */
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* LOGIN */
+    #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .login-box { background: #1e1e1e; padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 300px; }
+    .login-input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; background: #2d2d2d; color: white; font-size: 16px; box-sizing: border-box; }
+    .login-btn { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+    /* MENÜ */
+    .navbar { background: #1e1e1e; padding: 10px 20px; display: flex; gap: 10px; border-bottom: 2px solid #333; }
+    .nav-btn { background: transparent; border: none; color: #aaa; padding: 10px 15px; font-size: 16px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+    .nav-btn:hover { background: #333; color: white; }
+    .nav-btn.active { background: #3b82f6; color: white; }
+
+    /* TARTALOM */
+    main { flex: 1; position: relative; overflow: hidden; }
+    .tab-content { display: none; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; }
+    .tab-content.active { display: flex; gap: 20px; }
+
+    /* VIDEÓ */
+    #tab-video { flex-direction: row; }
+    #video-wrapper { flex: 2; background: black; border-radius: 12px; position: relative; display: flex; justify-content: center; align-items: center; border: 1px solid #333; }
+    .videos { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
+    video { max-width: 45%; border-radius: 10px; background: #222; border: 2px solid #444; }
+    #localVideo { transform: scaleX(-1); border-color: #3b82f6; }
+    .controls { position: absolute; bottom: 20px; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 50px; }
+    .ctrl-btn { width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 22px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .mute-btn { background: #444; }
+    .mute-btn.muted { background: #ef4444; position: relative; }
+    .mute-btn.muted::after { content: '\\'; position: absolute; font-size: 30px; color: white; font-weight: bold; }
+    #callBtn { background: #10b981; } #hangupBtn { background: #ef4444; }
+    .ctrl-btn:disabled { opacity: 0.5; background: #333; cursor: not-allowed; }
+
+    /* OSZLOPOS ELRENDEZÉS */
+    .split-left { flex: 1; max-width: 300px; background: #1e1e1e; border-radius: 12px; padding: 15px; border: 1px solid #333; overflow-y: auto; }
+    .split-right { flex: 2; background: #000; border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column; position: relative; }
+    .list-item { background: #2d2d2d; padding: 15px; margin-bottom: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+    .list-item:hover { background: #333; transform: translateX(5px); }
+    .status-dot { height: 10px; width: 10px; background-color: #10b981; border-radius: 50%; display: inline-block; margin-right: 10px; }
+
+    /* CHAT */
+    .chat-header { padding: 15px; background: #222; border-bottom: 1px solid #444; font-weight: bold; }
+    .chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #121212; }
+    .chat-form { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; display: flex; gap: 10px; align-items: center; }
+    .chat-input { flex: 1; padding: 12px; border-radius: 25px; border: none; background: #2d2d2d; color: white; outline: none; }
+    .send-btn { background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
+    
+    /* KÉPKÜLDÉS GOMB */
+    .file-label { cursor: pointer; font-size: 24px; color: #aaa; padding: 0 5px; transition: 0.2s; }
+    .file-label:hover { color: white; transform: scale(1.1); }
+    input[type="file"] { display: none; }
+
+    /* ÜZENETEK */
+    .msg { padding: 10px 15px; border-radius: 18px; max-width: 75%; word-break: break-word; font-size: 15px; }
+    .msg.me { align-self: flex-end; background: #3b82f6; color: white; border-bottom-right-radius: 2px; }
+    .msg.partner { align-self: flex-start; background: #333; color: #ddd; border-bottom-left-radius: 2px; }
+    .msg.system { align-self: center; background: transparent; color: #888; font-size: 12px; font-style: italic; }
+    .sender-name { font-size: 11px; color: #ddd; margin-bottom: 4px; display: block; opacity: 0.8; font-weight: bold; }
+    .chat-img { max-width: 100%; border-radius: 10px; margin-top: 5px; cursor: pointer; }
+    
+    .typing-indicator { font-size: 12px; color: #888; font-style: italic; margin-left: 20px; margin-bottom: 5px; height: 15px; opacity: 0; transition: opacity 0.3s; }
+    .typing-indicator.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h2>👋 Szia!</h2>
+        <p>Hogy hívnak?</p>
+        <input type="text" id="usernameInput" class="login-input" placeholder="Pl. Peti" autocomplete="off">
+        <button class="login-btn" onclick="login()">Belépés</button>
+    </div>
+</div>
+
+<nav class="navbar">
+  <button class="nav-btn active" onclick="openTab('tab-video', this)">📹 Videóhívás</button>
+  <button class="nav-btn" onclick="openTab('tab-friends', this)">👥 Barátok</button>
+  <button class="nav-btn" onclick="openTab('tab-groups', this)">📂 Csoportok</button>
+  <div style="flex:1;"></div>
+  <span id="displayMyName" style="color:#3b82f6; font-weight:bold; align-self:center;"></span>
+</nav>
+
+<main>
+  <div id="tab-video" class="tab-content active">
+    <section id="video-wrapper">
+      <div class="videos"><video id="localVideo" autoplay muted playsinline></video><video id="remoteVideo" autoplay playsinline></video></div>
+      <div class="controls">
+        <button id="micBtn" class="ctrl-btn mute-btn" onclick="toggleMute('audio')">🎤</button>
+        <button id="camBtn" class="ctrl-btn mute-btn" onclick="toggleMute('video')">📷</button>
+        <div style="width:20px;"></div>
+        <button id="callBtn" class="ctrl-btn" disabled>📞</button>
+        <button id="hangupBtn" class="ctrl-btn" disabled>❌</button>
+      </div>
+    </section>
+    <div class="split-right" style="max-width: 350px; margin-left: 20px;">
+      <div class="chat-header">Videó Chat</div>
+      <div id="chatWinVideo" class="chat-window"></div>
+      <div id="typingVideo" class="typing-indicator">Valaki ír...</div>
+      
+      <form class="chat-form" onsubmit="sendMsg(event, 'chatInVideo', 'chatWinVideo')">
+        <label for="fileVideo" class="file-label">📎</label>
+        <input type="file" id="fileVideo" accept="image/*" onchange="sendFile(this, 'chatWinVideo')">
+        <input id="chatInVideo" class="chat-input" placeholder="Írj ide..." autocomplete="off" oninput="handleTyping()" />
+        <button type="submit" class="send-btn">➤</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="tab-friends" class="tab-content">
+    <div class="split-left">
+      <h3>Barátok</h3>
+      
+      <div class="list-item" onclick="joinChat('privat_gergo', 'Gergő', 'chatWinF', 'chatHeadF', 'chatInF')"><span><span class="status-dot"></span>Gergő</span><b>Chat</b></div>
+      <div class="list-item" onclick="joinChat('privat_peti', 'Peti', 'chatWinF', 'chatHeadF', 'chatInF')"><span><span class="status-dot"></span>Peti</span><b>Chat</b></div>
+      <div class="list-item" onclick="joinChat('privat_gyuri', 'Gyuri', 'chatWinF', 'chatHeadF', 'chatInF')"><span><span class="status-dot"></span>Gyuri</span><b>Chat</b></div>
+      
+    </div>
+    <div class="split-right">
+      <div id="chatHeadF" class="chat-header">Válassz barátot!</div>
+      <div id="chatWinF" class="chat-window"></div>
+      <div id="typingF" class="typing-indicator">Valaki ír...</div>
+      <form class="chat-form" onsubmit="sendMsg(event, 'chatInF', 'chatWinF')">
+        <label for="fileF" class="file-label">📎</label>
+        <input type="file" id="fileF" accept="image/*" onchange="sendFile(this, 'chatWinF')" disabled class="file-input-dynamic">
+        <input id="chatInF" class="chat-input" placeholder="Üzenet..." autocomplete="off" disabled oninput="handleTyping()" />
+        <button type="submit" class="send-btn">➤</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="tab-groups" class="tab-content">
+    <div class="split-left">
+      <h3>Csoportok</h3>
+      <div class="list-item" onclick="joinChat('group_prog', 'Programozás', 'chatWinG', 'chatHeadG', 'chatInG')">💻 Programozás</div>
+      <div class="list-item" onclick="joinChat('group_game', 'Játék', 'chatWinG', 'chatHeadG', 'chatInG')">🎮 Játék</div>
+      <div class="list-item" onclick="joinChat('group_cars', 'Kocsik', 'chatWinG', 'chatHeadG', 'chatInG')">🚗 Kocsik</div>
+    </div>
+    <div class="split-right">
+      <div id="chatHeadG" class="chat-header">Válassz csoportot!</div>
+      <div id="chatWinG" class="chat-window"></div>
+      <div id="typingG" class="typing-indicator">Valaki ír...</div>
+      <form class="chat-form" onsubmit="sendMsg(event, 'chatInG', 'chatWinG')">
+        <label for="fileG" class="file-label">📎</label>
+        <input type="file" id="fileG" accept="image/*" onchange="sendFile(this, 'chatWinG')" disabled class="file-input-dynamic">
+        <input id="chatInG" class="chat-input" placeholder="Üzenet..." autocomplete="off" disabled oninput="handleTyping()" />
+        <button type="submit" class="send-btn">➤</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const chatHistory = {};
+  let currentRoom = "video_room";
+  let typingTimeout = null;
+  let myUsername = "Névtelen";
+
+  function login() {
+      const input = document.getElementById('usernameInput');
+      const name = input.value.trim();
+      if(!name) { alert("Írj be egy nevet!"); return; }
+      myUsername = name;
+      document.getElementById('displayMyName').innerText = myUsername;
+      document.getElementById('login-overlay').style.display = 'none';
+      startCamera();
+      joinChat('video_room', 'Videó Chat', 'chatWinVideo', null, 'chatInVideo');
+  }
+
+  function openTab(id, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      btn.classList.add('active');
+      if(id === 'tab-video') {
+          joinChat('video_room', 'Videó Chat', 'chatWinVideo', null, 'chatInVideo'); 
+      }
+  }
+
+  function joinChat(roomName, title, winId, headId, inputId) {
+      currentRoom = roomName;
+      if(headId) document.getElementById(headId).innerText = "Chat: " + title;
+      const win = document.getElementById(winId);
+      win.innerHTML = ''; 
+      
+      if(chatHistory[roomName]) {
+          chatHistory[roomName].forEach(msg => appendMsg(winId, msg.type, msg.text, msg.user, msg.image));
+      } else {
+          chatHistory[roomName] = [];
+          appendMsg(winId, 'system', 'Beléptél: ' + title);
+      }
+
+      document.querySelectorAll('.chat-input').forEach(i => i.disabled = true);
+      document.querySelectorAll('.file-input-dynamic').forEach(i => i.disabled = true);
+      
+      if(inputId) {
+          document.getElementById(inputId).disabled = false;
+          const form = document.getElementById(inputId).closest('form');
+          const fileIn = form.querySelector('input[type="file"]');
+          if(fileIn) fileIn.disabled = false;
+      }
+      socket.emit('join', roomName);
+  }
+
+  function sendMsg(e, inId, winId) {
+      e.preventDefault();
+      const input = document.getElementById(inId);
+      const txt = input.value.trim();
+      if(!txt) return;
+      sendMessageCore(txt, null, winId);
+      input.value = "";
+      socket.emit('typing', { room: getTargetRoom(winId), isTyping: false });
+  }
+
+  function sendFile(input, winId) {
+      const file = input.files[0];
+      if(!file) return;
+      
+      // Egyszerű méretellenőrzés (pl. max 5MB)
+      if(file.size > 5 * 1024 * 1024) { alert("Túl nagy a kép! Max 5MB."); return; }
+
+      const reader = new FileReader();
+      reader.onload = function() {
+          sendMessageCore(null, reader.result, winId);
+          input.value = ""; 
+      };
+      reader.readAsDataURL(file);
+  }
+
+  function sendMessageCore(text, image, winId) {
+      appendMsg(winId, 'me', text, "Én", image);
+      
+      if(!chatHistory[currentRoom]) chatHistory[currentRoom] = [];
+      chatHistory[currentRoom].push({ type: 'me', text: text, image: image, user: "Én" });
+
+      let targetRoom = getTargetRoom(winId);
+      socket.emit('message', { room: targetRoom, text: text, image: image, user: myUsername });
+  }
+
+  function getTargetRoom(winId) {
+      return (winId === 'chatWinVideo') ? 'video_room' : currentRoom;
+  }
+
+  socket.on('message', (data) => {
+      if(data.from === socket.id) return;
+      const senderName = data.user || "Partner";
+
+      if(!chatHistory[data.room]) chatHistory[data.room] = [];
+      chatHistory[data.room].push({ type: 'partner', text: data.text, image: data.image, user: senderName });
+      
+      let targetId = getWinIdByRoom(data.room);
+      if(document.getElementById(targetId) && (data.room === currentRoom || data.room === 'video_room')) {
+          appendMsg(targetId, 'partner', data.text, senderName, data.image);
+          toggleTypingIndicator(targetId, false);
+      }
+  });
+
+  function getWinIdByRoom(room) {
+      if(room === 'video_room') return 'chatWinVideo';
+      if(room.startsWith('privat_')) return 'chatWinF';
+      return 'chatWinG';
+  }
+
+  function appendMsg(id, type, txt, username, imageSrc) {
+      const w = document.getElementById(id);
+      if(w) {
+          const d = document.createElement("div");
+          d.className = `msg ${type}`;
+          
+          let contentHtml = "";
+          if(type === 'partner' && username) contentHtml += `<span class="sender-name">${username}</span>`;
+          if(imageSrc) contentHtml += `<img src="${imageSrc}" class="chat-img" onclick="window.open(this.src)">`;
+          if(txt) contentHtml += `<div>${txt}</div>`;
+          
+          d.innerHTML = contentHtml;
+          w.appendChild(d);
+          w.scrollTop = w.scrollHeight;
+      }
+  }
+
+  function handleTyping() {
+      socket.emit('typing', { room: currentRoom, isTyping: true });
+      if(typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => { socket.emit('typing', { room: currentRoom, isTyping: false }); }, 1000);
+  }
+  socket.on('typing', (data) => {
+      if(data.room === currentRoom) {
+         toggleTypingIndicator(getWinIdByRoom(data.room), data.isTyping);
+      }
+  });
+  function toggleTypingIndicator(winId, show) {
+      let iId = '';
+      if(winId === 'chatWinVideo') iId = 'typingVideo';
+      else if(winId === 'chatWinF') iId = 'typingF';
+      else if(winId === 'chatWinG') iId = 'typingG';
+      const el = document.getElementById(iId);
+      if(el) show ? el.classList.add('show') : el.classList.remove('show');
+  }
+
+  function toggleMute(k) {
+      if (!localStream) return;
+      if (k === 'audio') {
+          const t = localStream.getAudioTracks()[0];
+          if(t) { t.enabled = !t.enabled; document.getElementById('micBtn').classList.toggle('muted', !t.enabled); }
+      } else if (k === 'video') {
+          const t = localStream.getVideoTracks()[0];
+          if(t) { t.enabled = !t.enabled; document.getElementById('camBtn').classList.toggle('muted', !t.enabled); }
+      }
+  }
+
+  const els = { call: document.getElementById('callBtn'), hangup: document.getElementById('hangupBtn'), local: document.getElementById('localVideo'), remote: document.getElementById('remoteVideo') };
+  let localStream, pc;
+  const VROOM = "video_room";
+  async function startCamera() {
+      try {
+          chatHistory[VROOM] = []; 
+          localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+          els.local.srcObject = localStream;
+          els.call.disabled = false;
+          socket.emit('join', VROOM);
+      } catch(e) { alert("Kamera engedély szükséges!"); }
+  }
+  socket.on("offer", async ({offer, from}) => {
+    if(!pc) await createPeer(false);
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const ans = await pc.createAnswer();
+    await pc.setLocalDescription(ans);
+    socket.emit("answer", { to: from, answer: ans });
+  });
+  socket.on("answer", async ({answer}) => { if(pc) await pc.setRemoteDescription(new RTCSessionDescription(answer)); });
+  socket.on("ice-candidate", async ({candidate}) => { try{ if(pc) await pc.addIceCandidate(candidate); }catch(e){} });
+  els.call.onclick = async () => { await createPeer(true); els.call.disabled = true; els.hangup.disabled = false; };
+  els.hangup.onclick = () => { if(pc) pc.close(); pc = null; els.hangup.disabled = true; els.call.disabled = false; els.remote.srcObject = null; };
+  async function createPeer(isCaller) {
+    pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.ontrack = e => { if(e.streams[0]) els.remote.srcObject = e.streams[0]; };
+    pc.onicecandidate = e => { if(e.candidate) socket.emit("ice-candidate", {room: VROOM, candidate: e.candidate}); };
+    if(isCaller) {
+      const off = await pc.createOffer();
+      await pc.setLocalDescription(off);
+      socket.emit("offer", {room: VROOM, offer: off});
+    }
+  }
+</script>
+</body>
+</html>
